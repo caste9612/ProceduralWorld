@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        html, body {
+            overflow: hidden;
+            width   : 100%;
+            height  : 100%;
+            margin  : 0;
+            padding : 0;
+            font-size: 15px;
+            line-height: 6px;
+        }
+
+        .slidecontainer {
+            right: 0px;
+        }
+
+        .gui{
+            position: absolute;
+            right: 0px;
+            background: rgba(139, 126, 102, 0.5);
+            width: 12%;
+
+        }
+        .gui1{
+            position: absolute;
+            left: 0px;
+            bottom: 0px;
+            background: rgba(139, 126, 102, 0.5);
+            width: 12%;
+        }
+
+        .gui2{
+            position: absolute;
+            right: 0px;
+            bottom: 0px;
+            background: rgba(139, 126, 102, 0.5);
+            width: 12%;
+        }
+
+        .slider {
+            -webkit-appearance: none;
+            width: 90%;
+            height: 8px;
+            padding-left: 12px;
+            background: #d3d3d3;
+            outline: none;
+            opacity: 0.7;
+            -webkit-transition: .2s;
+            transition: opacity .2s;
+        }
+
+        .slider:hover {
+            opacity: 1;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            background: #4CAF50;
+            cursor: pointer;
+        }
+
+        .slider::-moz-range-thumb {
+            width: 15px;
+            height: 15px;
+            background: #4CAF50;
+            cursor: pointer;
+        }
+
+        #renderCanvas {
+            width   : 100%;
+            height  : 100%;
+            touch-action: none;
+        }
+
+        .button {
+            background-color: #4CAF50; /* Green */
+            border: none;
+            color: white;
+            padding: 10px 25px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            margin: 2px 1px;
+            cursor: pointer;
+        }
+
+        #fpsLabel {
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            color: #999;
+            cursor: default;
+            font-size: 20px;
+        }
+        .container {
+            display: block;
+            position: relative;
+            padding-left: 35px;
+            padding-top: 4px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            font-size: 15px;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        /* Hide the browser's default checkbox */
+        .container input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+
+        /* Create a custom checkbox */
+        .checkmark {
+            position: absolute;
+            top: 14px;
+            left: 0;
+            height: 20px;
+            width: 20px;
+            background-color: #0e8e14;
+        }
+
+        /* On mouse-over, add a grey background color */
+        .container:hover input ~ .checkmark {
+            background-color: #ccc;
+        }
+
+        /* When the checkbox is checked, add a blue background */
+        .container input:checked ~ .checkmark {
+            background-color: #2196F3;
+        }
+
+        /* Create the checkmark/indicator (hidden when not checked) */
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+        }
+
+        /* Show the checkmark when checked */
+        .container input:checked ~ .checkmark:after {
+            display: block;
+        }
+
+        /* Style the checkmark/indicator */
+        .container .checkmark:after {
+            left: 9px;
+            top: 5px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 3px 3px 3px 3px;
+            -webkit-transform: rotate(45deg);
+            -ms-transform: rotate(45deg);
+            transform: rotate(45deg);
+        }
+
+    </style>
+    <meta http-equiv="Content-Type" content="text/html" charset="utf-8"/>
+    <title>Babylon Procedural World</title>
+
+    <!-- Link to the last version of BabylonJS -->
+    <script src="https://preview.babylonjs.com/babylon.js"></script>
+    <!-- Link to the last version of BabylonJS loaders to enable loading filetypes such as .gltf -->
+    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <!-- Link to pep.js to ensure pointer events work consistently in all browsers -->
+    <script src="https://code.jquery.com/pep/0.4.1/pep.js"></script>
+    <script src="babylon.dynamicTerrain.min.js"></script>
+    <script src="perlin.js"></script>
+    <script src="babylon.skyMaterial.min.js"></script>
+    <script src="babylon.waterMaterial.js"></script>
+    <script src="simplex-noise.js"></script>
+    <script src="babylon.terrainMaterial.min.js"></script>
+
+</head>
+
+<body>
+
+<div id="fpsLabel"></div>
+<div class="gui"style="border-style: double">
+
+    <h2>Settings: </h2>
+
+    <div class="slidecontainer">
+        <h4>Sky:</h4>
+        <input type="range" min="1" max="100" value="20" class="slider" id="fog">
+        <p>Fog: <span id="fogValue"></span></p>
+        <input type="range" min="-100" max="100" value="5" class="slider" id="sun">
+        <p>SunPosition: <span id="sunValue"></span></p>
+        <input type="range" min="0" max="100" value="25" class="slider" id="mieCoeff">
+        <p>Luminance: <span id="mieCoeffValue"></span></p>
+    </div>
+
+    <div class="slidecontainer">
+
+        <h4>Terrain:</h4>
+        <button class="button" id="terrainButton" style="width: 95%;">TerrainSettings</button>
+        <script>
+            var button = document.getElementById("terrainButton");
+            button.onclick = function () {
+                var windowa = document.getElementsByClassName("gui1");
+                if(windowa[0].style.display == "none"){
+                    windowa[0].style.display = "grid";
+                }else{
+                    windowa[0].style.display = "none";
+                }
+            }
+        </script>
+
+        <label class="container" >
+            <p>Display WireFrames</p>
+            <input type="checkbox" id="wireframe">
+            <span class="checkmark" style="left: 5px;"></span>
+        </label>
+    </div>
+
+    <div class="slidecontainer">
+        <input type="range" min="1" max="3" value="3" class="slider" id="quality">
+        <p>Quality: <span id="qualityValue"></span></p>
+    </div>
+</div>
+
+<div class="gui1" style="border-style: double;display: none">
+
+    <h4>First Octave:</h4>
+
+    <input type="range" min="0" max="10" value="5" class="slider" id="terrain">
+    <p>Amplitude: <span id="terrainValue"></span></p>
+    <input type="range" min="0" max="100" value="1" class="slider" id="frequencya">
+    <p>Frequency : <span id="frequencyValuea"></span></p>
+
+    <h4>Second Octave:</h4>
+
+    <input type="range" min="0" max="10" value="5" class="slider" id="terrain2">
+    <p>Amplitude: <span id="terrainValue2"></span></p>
+    <input type="range" min="0" max="100" value="10" class="slider" id="frequencyb">
+    <p>Frequency : <span id="frequencyValueb"></span></p>
+
+    <h4>Third Octave:</h4>
+
+    <input type="range" min="0" max="100" value="0" class="slider" id="terrain3">
+    <p>Amplitude: <span id="terrainValue3"></span></p>
+    <input type="range" min="0" max="100" value="0" class="slider" id="frequencyc">
+    <p>Frequency : <span id="frequencyValuec"></span></p>
+
+
+    <h4>Exponential:</h4>
+    <input type="range" min="0" max="500" value="400" class="slider" id="exponent">
+    <p>Exponent: <span id="exponentValue"></span></p>
+
+
+    <button class="button" id="terrainGenerator">Generate</button>
+</div>
+
+<div class="gui2" style="border-style: double">
+
+    <h4>Water Settings:</h4>
+
+    <input type="range" min="-10" max="1000" value="50" class="slider" id="water">
+    <p>Elevation: <span id="waterLevel"></span></p>
+
+    <input type="range" min="1" max="100" value="10" class="slider" id="bumpHeight">
+    <p>Bump Height: <span id="bumpHeightValue"></span></p>
+
+    <input type="range" min="1" max="100" value="5" class="slider" id="waveLength">
+    <p>Wave Length: <span id="waveLengthValue"></span></p>
+
+</div>
+
+<canvas id="renderCanvas"></canvas>
+</body>
+<script src="test.js"></script>
+
+</html>
